@@ -1,252 +1,306 @@
-# Contributing to Octochains
+# Contributing to OctaMind
 
-First off, thank you for considering contributing to Octochains! It’s people like you who will help build the universal reasoning layer for high-stakes AI.
+Thanks for your interest in contributing to OctaMind.
 
----
+OctaMind is built around one idea:
 
-### Contribution Workflow
+Create lightweight, modular, and collaborative AI reasoning systems without unnecessary complexity.
 
-1. Fork the repository and create your branch from `main`.
-
-2. Code your contribution following the directory standards below.
-
-3. Test your agent or demo in an isolated environment.
-
-4. Submit a Pull Request (PR). Note that all PRs are personally vetted for logic, safety, and architectural fit.
+Before submitting contributions, please review the guidelines below.
 
 ---
 
-### The "Zero-Dependency" Golden Rule
+# Contribution Workflow
 
-**Octochains must remain lightweight.**
+Please follow this workflow when contributing:
 
-**Do NOT** submit Pull Requests that add heavy ML SDKs (`langchain`, `llama-index`, `openai`, `anthropic`, `transformers`, etc.) to the `requirements.txt` or `pyproject.toml`.
+1. Fork the repository
+2. Create a branch from `main`
+3. Build and test your contribution
+4. Submit a Pull Request
 
-The core framework (`src/octochains`) must only rely on standard Python libraries.
+Every Pull Request is reviewed for:
 
-If you are building an integration, demo, or specific wrapper, place it in the `demo-examples/` directory where users can choose to install those dependencies themselves.
+- Code quality
+- Logic consistency
+- Architectural compatibility
+- Thread safety
+- Framework design alignment
 
 ---
 
-### The Hub Architecture
+# Lightweight Core Philosophy
 
-Octochains uses a Package Registry system. To ensure users can use clean shorthand imports, every new component must be registered.
+OctaMind is intentionally designed to remain lightweight.
 
----
+The framework core should avoid heavyweight AI SDK dependencies.
 
-### 1. Adding a New Agent
+Do not add libraries such as:
 
-Agents live in domain-specific folders inside `src/octochains/agents/`.
+- langchain
+- llama-index
+- openai
+- anthropic
+- transformers
 
-### Placement
+to:
 
-Create a new `.py` file in an existing domain folder (e.g., `medical/`) or create a new domain folder if it doesn't exist.
-
-### Requirements
-
-- Inherit from the `octochains.Agent` base class.
-- Define a clear `role`, `goal`, and `input_description` in `super().__init__`.
-- **Dependency Injection:** Do not hardcode LLM calls inside your agent. Your agent must accept `llm_callable` in its `__init__` and pass it to the base class.
-- Implement the `execute(self, problem_data: str) -> Any` method.
-- Use `self._build_prompt(problem_data)` to automatically inject the double-blind isolation instructions and `@tool` schemas.
-
-### Registration (Crucial)
-
-You must update the `__init__.py` inside your domain folder to export your agent.
-
-```python
-# src/octochains/agents/medical/__init__.py
-
-from .your_new_file import YourAgentClass
+```text
+requirements.txt
+pyproject.toml
 ```
 
----
+The core framework should rely primarily on standard Python libraries.
 
-### 2. Adding a New Aggregator
+If integrations or demos require additional dependencies, place them inside:
 
-Aggregators live in `src/octochains/aggregators/`.
-
-## Placement
-
-Create your logic file in the `aggregators` directory.
-
-## Requirements
-
-- Inherit from `octochains.Aggregator`.
-- Aggregators process a dictionary of reports (`Dict[str, str]`).
-- **Structured Outputs:** Aggregators return `Any`. You are highly encouraged to build aggregators that return clean JSON dictionaries or Pydantic models for API readiness.
-
----
-
-### 💡 Example: Creating a Cybersecurity Agent
-
-Here is how a typical "Expert" agent should look. This example uses a `@tool` and follows the updated Octochains BYO-LLM standard:
-
-```python
-from octochains import Agent, tool
-from typing import Callable, Any
-
-
-class NetworkSecurityAgent(Agent):
-    """
-    This agent specializes in scanning network logs for unauthorized
-    access attempts and firewall misconfigurations.
-    """
-
-    def __init__(self, llm_callable: Callable[[str], Any]):
-
-        # 1. Define the Identity:
-        # This is passed to the base class prompt builder
-
-        super().__init__(
-            role="Network Security Specialist",
-            goal="Identify active intrusion patterns and open-port vulnerabilities.",
-            input_description="A raw network log or firewall configuration file.",
-            llm_callable=llm_callable
-        )
-
-    @tool
-    def check_port_status(self, port: int) -> str:
-        """
-        Queries the system firewall for the status of a specific port.
-
-        Args:
-            port: The network port number to check (e.g., 22, 80).
-        """
-
-        # Logic for the tool goes here
-
-        protected_ports = [22, 3389]
-
-        if port in protected_ports:
-            return f"Port {port} is OPEN and vulnerable."
-
-        return f"Port {port} is closed/secured."
-
-    def execute(self, problem_data: str) -> Any:
-        """
-        The 'problem_data' parameter is the full complex problem
-        broadcasted by the Engine.
-        """
-
-        # 2. The base class automatically builds the prompt
-        # and injects the check_port_status tool schema!
-
-        prompt = self._build_prompt(problem_data)
-
-        # 3. Execute using the user's provided LLM
-
-        return self.llm_callable(prompt)
+```text
+demo-examples/
 ```
 
+This keeps the framework clean, modular, and optional.
+
 ---
 
-### Creating Demo Examples
+# Project Architecture
 
-Demos are the best way to show Octochains in action.
+OctaMind uses a modular registry-based architecture.
 
-To keep the core framework lightweight, we enforce **Strict Demo Isolation**.
+Every component should be properly registered to support clean imports and maintain framework consistency.
 
-## Placement
+---
 
-Create a numbered folder in `demo-examples/`.
+# Adding a New Agent
+
+Agents live inside:
+
+```text
+src/octamind/agents/
+```
+
+You may use an existing domain folder or create a new one.
 
 Example:
 
-```plaintext
-demo-examples/02-cybersecurity-threat-hunt
+```text
+agents/
+├── medical/
+├── finance/
+├── education/
+└── cybersecurity/
 ```
 
-## Structure
+---
 
-```plaintext
-demo-examples/XX-your-demo/
-├── requirements.txt  <-- MANDATORY: List all demo-specific libraries
-├── run_demo.py       <-- MANDATORY: The entry point for the demo
-└── README.md         <-- Optional: Explain the use case
+## Agent Requirements
+
+Each agent must:
+
+- Inherit from `Agent`
+- Define:
+  - role
+  - goal
+  - input_description
+- Accept `llm_callable`
+- Implement:
+
+```python
+execute(self, problem_data)
 ```
 
-### The Dependency Rule
+Use:
 
-If your demo requires libraries not found in the core `octochains` package (like `pandas`, `litellm`, or `biopython`), they must be listed in your demo's `requirements.txt`.
+```python
+self._build_prompt(problem_data)
+```
 
-❌ Do not add them to the core `pyproject.toml`. 
+to automatically inject prompts and tool schemas.
+
+Avoid hardcoded LLM providers.
+
+Dependency injection is required.
+
+---
+
+# Agent Registration
+
+After creating a new agent, register it.
+
+Example:
+
+```python
+from .your_agent import YourAgent
+```
+
+Update the corresponding:
+
+```text
+__init__.py
+```
+
+Proper registration ensures shorthand imports continue working.
+
+---
+
+# Adding Aggregators
+
+Aggregators belong inside:
+
+```text
+src/octamind/aggregators/
+```
+
+Requirements:
+
+- Inherit from `Aggregator`
+- Process:
+
+```python
+Dict[str, str]
+```
+
+- Return structured outputs when possible
+
+Preferred formats:
+
+- JSON
+- Dictionaries
+- Typed models
+
+Structured outputs improve interoperability and API readiness.
+
+---
+
+# Demo Examples
+
+Demo projects help showcase OctaMind capabilities.
+
+To keep the core isolated and lightweight, demos follow strict dependency separation.
+
+Place demos inside:
+
+```text
+demo-examples/
+```
+
+Example:
+
+```text
+demo-examples/02-cybersecurity-analysis
+```
+
+Recommended structure:
+
+```text
+demo-examples/XX-demo/
+├── requirements.txt
+├── run_demo.py
+└── README.md
+```
+
+If your demo uses external libraries, include them only in:
+
+```text
+requirements.txt
+```
+
+inside the demo folder.
+
+Do not modify core dependency files.
 
 ---
 
 # Code Standards
 
-To keep the Octochains codebase clean and maintainable for everyone, please adhere to the following standards.
+We prioritize maintainable and production-friendly code.
 
 ---
 
-### Threading Safety
+## Thread Safety
 
-⚠️ **Critical:** Agents in Octochains run in parallel threads.
+OctaMind agents may run in parallel.
 
-Avoid using:
+Avoid:
+
 - Global state
-- Mutable module-level variables
-- Non-thread-safe resources within an Agent's `execute` method
+- Mutable shared variables
+- Non-thread-safe resources
 
-Your code should be **Stateless** relative to other agents.
+Agents should remain isolated and stateless.
 
 ---
 
-### Type Hinting
+## Type Hinting
 
-We follow modern Python practices.
+Use modern Python typing practices.
 
-All public methods and function signatures must include Python type hints.
+All public methods and functions should include type hints.
 
-Use our custom `LLMCallable` alias (`Callable[[str], Any]`) for model execution parameters.
+Preferred LLM signature:
+
+```python
+Callable[[str], Any]
+```
 
 ---
 
 ## Documentation
 
-We prioritize clarity.
+Clear documentation is essential.
 
 Include descriptive docstrings for:
-- All classes
-- All `@tool` methods
 
-Remember:
-The text in your tool's docstring is what the LLM uses to understand how to call it.
+- Classes
+- Public methods
+- Tools
 
----
+Tool docstrings directly influence model behavior and execution quality.
 
-### Error Handling
-
-Never let a failed LLM call crash the Engine.
-
-Rely on the `format_output` safety nets in the base classes to prevent dictionary mapping crashes.
+Good documentation improves reliability.
 
 ---
 
-### Licensing of Contributions
+## Error Handling
 
-Octochains operates under a Fair-Code model.
+Execution failures should not crash the framework.
 
-By submitting a contribution to this repository, you agree to the following:
+Use defensive programming and framework safeguards when processing LLM outputs.
 
-**BSL 1.1 Licensing**
-
-You agree that your contributions will be licensed under the Business Source License 1.1. This allows the project to remain sustainable while keeping the source code public and free for most users.
-
-**Automatic Open Source Transition**
-
-You acknowledge and agree that your contributions will automatically transition to the Apache License, Version 2.0, upon the project's predefined Change Date (the 4-year sunset). This structure ensures that while we protect the engine's development today, your work is guaranteed to eventually become part of a fully open-source public good.
+Reliable systems fail gracefully.
 
 ---
 
-### Questions?
+# Licensing
 
-If you have questions about where a specific expert belongs in the Hub or need help with the threading logic, feel free to open an Issue or reach out directly to the maintainer:
+By contributing to OctaMind, you agree that contributions follow the project licensing model.
 
-📩 ahmad.vh7@gmail.com
+This includes:
+
+### Business Source License (BSL 1.1)
+
+Contributions remain protected under the project's sustainability model.
+
+### Future Open Source Transition
+
+Contributions transition to Apache 2.0 under the project's predefined change timeline.
+
+Please review licensing terms before contributing.
 
 ---
 
-Let's build the future of parallel reasoning together! ✨
-<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=a2cb3b15-b3c7-4f80-9113-2405c8554543" />
+# Need Help?
+
+If you have questions, architecture ideas, or contribution-related discussions:
+
+📩 Email: 2400030209@kluniversity.in
+
+You can also open an Issue for:
+
+- Bugs
+- Feature requests
+- Technical discussions
+- Design questions
+
+---
+
+Build modular reasoning systems together 🚀
