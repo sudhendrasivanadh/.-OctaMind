@@ -1,6 +1,6 @@
 # 💡 Demo 02: The Micro-SaaS Idea Validator
 
-This demo showcases a **Hybrid AI Architecture** using the **Octochains** framework. It evaluates a short startup idea by combining the speed and cost-efficiency of **local open-source models** (via Ollama) with the advanced reasoning capabilities of **cloud models** (via OpenAI).
+This demo showcases a **Hybrid AI Architecture** using the **OctoMind** framework. It evaluates a short startup idea by combining the speed and cost-efficiency of **local open-source models** (via Ollama) with the advanced reasoning capabilities of **cloud models** (via OpenAI).
 
 By running 4 distinct expert agents in parallel locally, and reserving the expensive API call for the final synthesis, you get a comprehensive venture capital report for fractions of a cent!
 
